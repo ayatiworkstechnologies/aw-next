@@ -17,13 +17,22 @@ import {
 
 export default function BlogsPage() {
   const [blogs, setBlogs] = useState([]);
+  const [authors, setAuthors] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
   async function loadBlogs() {
     try {
-      const data = await apiFetch("/blogs");
-      setBlogs(data || []);
+      const [blogsData, authorsData, categoriesData] = await Promise.all([
+        apiFetch("/blogs"),
+        apiFetch("/authors").catch(() => []),
+        apiFetch("/categories").catch(() => []),
+      ]);
+
+      setBlogs(blogsData || []);
+      setAuthors(authorsData || []);
+      setCategories(categoriesData || []);
     } catch (err) {
       setError(err.message || "Failed to load blogs");
     } finally {
@@ -67,6 +76,19 @@ export default function BlogsPage() {
   }
 
   const publishedCount = blogs.filter((b) => b.is_published).length;
+
+  // Helpers: map id → name
+  const getAuthorName = (authorId) => {
+    if (!authorId) return "—";
+    const a = authors.find((x) => x.id === authorId);
+    return a?.name || "—";
+  };
+
+  const getCategoryName = (categoryId) => {
+    if (!categoryId) return "—";
+    const c = categories.find((x) => x.id === categoryId);
+    return c?.name || "—";
+  };
 
   return (
     <section className="space-y-6">
@@ -177,17 +199,19 @@ export default function BlogsPage() {
                       </div>
                     </td>
 
+                    {/* Author from authors table using author_id */}
                     <td className="px-3 py-2 align-top text-slate-600">
                       <div className="inline-flex items-center gap-1.5 text-[11px]">
                         <FiUser size={11} className="text-slate-400" />
-                        <span>{b.author_name || "—"}</span>
+                        <span>{getAuthorName(b.author_id)}</span>
                       </div>
                     </td>
 
+                    {/* Category from categories table using category_id */}
                     <td className="px-3 py-2 align-top text-slate-600">
                       <div className="inline-flex items-center gap-1.5 text-[11px]">
                         <FiTag size={11} className="text-slate-400" />
-                        <span>{b.category_obj?.name || "—"}</span>
+                        <span>{getCategoryName(b.category_id)}</span>
                       </div>
                     </td>
 
@@ -221,10 +245,9 @@ export default function BlogsPage() {
 
                     <td className="px-3 py-2 align-top text-right">
                       <div className="inline-flex items-center gap-2">
-                        {/* Later you can make /admin/blogs/[id] edit page */}
-                        {/* <Link ...>Edit</Link> or keep as button if you add modal */}
+                        {/* EDIT BY SLUG */}
                         <Link
-                          href={`/admin/blogs/${b.id}`}
+                          href={`/admin/blogs/${encodeURIComponent(b.slug)}`}
                           className="inline-flex items-center justify-center h-7 w-7 rounded-full border border-border text-slate-700 hover:bg-slate-100 text-[11px]"
                           title="Edit"
                         >
