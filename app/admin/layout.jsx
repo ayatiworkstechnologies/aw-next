@@ -20,33 +20,21 @@ export default function AdminLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
-
-    function checkAuth() {
-      const token = getToken();
-      if (!token) {
-        router.replace("/login");
-        return;
-      }
-
-      const storedUser = getCurrentUser();
-      if (!storedUser) {
-        // no user stored → treat as not logged in
-        clearToken();
-        router.replace("/login");
-        return;
-      }
-
-      if (!mounted) return;
-      setUser(storedUser);
-      setChecking(false);
+    const token = getToken();
+    if (!token) {
+      router.replace("/login");
+      return;
     }
 
-    checkAuth();
+    const storedUser = getCurrentUser();
+    if (!storedUser) {
+      clearToken();
+      router.replace("/login");
+      return;
+    }
 
-    return () => {
-      mounted = false;
-    };
+    setUser(storedUser);
+    setChecking(false);
   }, [router]);
 
   function handleLogout() {
@@ -57,19 +45,17 @@ export default function AdminLayout({ children }) {
 
   if (checking) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-200">
+      <main className="min-h-screen flex items-center justify-center bg-background text-foreground">
         <div className="flex items-center gap-2 text-sm">
-          <span className="h-3 w-3 rounded-full border-2 border-slate-500 border-t-transparent animate-spin" />
+          <span className="h-3 w-3 rounded-full border-2 border-slate-400 border-t-transparent animate-spin" />
           Checking access…
         </div>
       </main>
     );
   }
 
-  if (!user) return null;
-
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex">
+    <div className="min-h-screen bg-background text-foreground flex">
       <AdminSidebar
         user={user}
         pathname={pathname}
@@ -78,7 +64,7 @@ export default function AdminLayout({ children }) {
         onLogout={handleLogout}
       />
 
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col">
         <AdminHeader
           user={user}
           onLogout={handleLogout}

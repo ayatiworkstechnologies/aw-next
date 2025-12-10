@@ -56,7 +56,6 @@ export default function SettingsPage() {
         body: JSON.stringify(payload),
       });
 
-      // Update form & local user store
       setProfileForm({
         full_name: data.full_name || "",
         email: data.email || "",
@@ -105,8 +104,6 @@ export default function SettingsPage() {
 
     setPassSaving(true);
     try {
-      // Backend ignores old_password in this simplified version.
-      // If you later add check in backend, you can send old_password too.
       await apiFetch(`/users/${userId}`, {
         method: "PUT",
         body: JSON.stringify({
@@ -140,8 +137,8 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <main className="min-h-[60vh] flex items-center justify-center">
-        <div className="flex items-center gap-2 text-xs text-slate-400">
-          <span className="h-3 w-3 rounded-full border-2 border-slate-500 border-t-transparent animate-spin" />
+        <div className="flex items-center gap-2 text-xs text-slate-500">
+          <span className="h-3 w-3 rounded-full border-2 border-slate-400 border-t-transparent animate-spin" />
           Loading settings…
         </div>
       </main>
@@ -151,7 +148,7 @@ export default function SettingsPage() {
   if (!userId) {
     return (
       <main className="min-h-[60vh] flex items-center justify-center">
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-500">
           No user found. Please log in again.
         </p>
       </main>
@@ -161,24 +158,26 @@ export default function SettingsPage() {
   return (
     <section className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-slate-50 tracking-tight">
+        <h2 className="text-xl font-semibold text-slate-900">
           Settings
         </h2>
-        <p className="text-xs text-slate-400 mt-1">
+        <p className="text-xs text-slate-500 mt-1">
           Update your profile info and change your password.
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         {/* Profile card */}
-        <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 sm:p-5 flex flex-col gap-3">
+        <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5 flex flex-col gap-3 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
-            <div className="h-8 w-8 rounded-xl bg-slate-800 flex items-center justify-center">
-              <FiUser className="text-slate-100" size={16} />
+            <div className="h-8 w-8 rounded-xl bg-slate-900 flex items-center justify-center">
+              <FiUser className="text-white" size={16} />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-slate-50">Profile</h3>
-              <p className="text-[11px] text-slate-400">
+              <h3 className="text-sm font-semibold text-slate-900">
+                Profile
+              </h3>
+              <p className="text-[11px] text-slate-500">
                 Basic information about your account.
               </p>
             </div>
@@ -189,7 +188,7 @@ export default function SettingsPage() {
             className="space-y-3 text-xs mt-2"
           >
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">
+              <label className="block text-[11px] text-slate-500 mb-1">
                 Full name
               </label>
               <div className="relative">
@@ -197,7 +196,7 @@ export default function SettingsPage() {
                   <FiUser size={13} />
                 </span>
                 <input
-                  className="w-full bg-slate-900 text-slate-50 border border-slate-700 rounded-xl px-9 py-2 outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-500"
+                  className="w-full bg-white text-slate-900 border border-border rounded-xl px-9 py-2 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/15"
                   value={profileForm.full_name}
                   onChange={(e) =>
                     setProfileForm({
@@ -210,7 +209,7 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">
+              <label className="block text-[11px] text-slate-500 mb-1">
                 Email
               </label>
               <div className="relative">
@@ -218,7 +217,7 @@ export default function SettingsPage() {
                   <FiMail size={13} />
                 </span>
                 <input
-                  className="w-full bg-slate-900 text-slate-50 border border-slate-700 rounded-xl px-9 py-2 outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-500"
+                  className="w-full bg-white text-slate-900 border border-border rounded-xl px-9 py-2 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/15"
                   type="email"
                   value={profileForm.email}
                   onChange={(e) =>
@@ -234,7 +233,7 @@ export default function SettingsPage() {
             <button
               type="submit"
               disabled={profileSaving}
-              className="inline-flex items-center gap-2 rounded-xl bg-slate-50 text-slate-950 px-4 py-2 text-[11px] font-medium hover:bg-white disabled:opacity-60 transition"
+              className="inline-flex items-center gap-2 rounded-xl bg-slate-900 text-white px-4 py-2 text-[11px] font-medium hover:bg-slate-800 disabled:opacity-60 transition"
             >
               <FiSave size={13} />
               {profileSaving ? "Saving…" : "Save changes"}
@@ -243,16 +242,16 @@ export default function SettingsPage() {
         </div>
 
         {/* Password card */}
-        <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 sm:p-5 flex flex-col gap-3">
+        <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5 flex flex-col gap-3 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
-            <div className="h-8 w-8 rounded-xl bg-slate-800 flex items-center justify-center">
-              <FiLock className="text-slate-100" size={16} />
+            <div className="h-8 w-8 rounded-xl bg-slate-900 flex items-center justify-center">
+              <FiLock className="text-white" size={16} />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-slate-50">
+              <h3 className="text-sm font-semibold text-slate-900">
                 Change Password
               </h3>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-slate-500">
                 Use a strong, unique password for better security.
               </p>
             </div>
@@ -263,11 +262,11 @@ export default function SettingsPage() {
             className="space-y-3 text-xs mt-2"
           >
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">
+              <label className="block text-[11px] text-slate-500 mb-1">
                 Current password
               </label>
               <input
-                className="w-full bg-slate-900 text-slate-50 border border-slate-700 rounded-xl px-3 py-2 outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-500"
+                className="w-full bg-white text-slate-900 border border-border rounded-xl px-3 py-2 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/15"
                 type="password"
                 value={passForm.old_password}
                 onChange={(e) =>
@@ -278,11 +277,11 @@ export default function SettingsPage() {
 
             <div className="grid gap-3 md:grid-cols-2">
               <div>
-                <label className="block text-[11px] text-slate-400 mb-1">
+                <label className="block text-[11px] text-slate-500 mb-1">
                   New password
                 </label>
                 <input
-                  className="w-full bg-slate-900 text-slate-50 border border-slate-700 rounded-xl px-3 py-2 outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-500"
+                  className="w-full bg-white text-slate-900 border border-border rounded-xl px-3 py-2 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/15"
                   type="password"
                   value={passForm.new_password}
                   onChange={(e) =>
@@ -294,11 +293,11 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
-                <label className="block text-[11px] text-slate-400 mb-1">
+                <label className="block text-[11px] text-slate-500 mb-1">
                   Confirm password
                 </label>
                 <input
-                  className="w-full bg-slate-900 text-slate-50 border border-slate-700 rounded-xl px-3 py-2 outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-500"
+                  className="w-full bg-white text-slate-900 border border-border rounded-xl px-3 py-2 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/15"
                   type="password"
                   value={passForm.confirm_password}
                   onChange={(e) =>
@@ -314,7 +313,7 @@ export default function SettingsPage() {
             <button
               type="submit"
               disabled={passSaving}
-              className="inline-flex items-center gap-2 rounded-xl bg-slate-50 text-slate-950 px-4 py-2 text-[11px] font-medium hover:bg-white disabled:opacity-60 transition"
+              className="inline-flex items-center gap-2 rounded-xl bg-slate-900 text-white px-4 py-2 text-[11px] font-medium hover:bg-slate-800 disabled:opacity-60 transition"
             >
               <FiLock size={13} />
               {passSaving ? "Updating…" : "Update password"}

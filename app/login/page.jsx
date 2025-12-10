@@ -9,8 +9,9 @@ import { FiMail, FiLock, FiEye, FiEyeOff, FiLogIn } from "react-icons/fi";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("admin@example.com");
-  const [password, setPassword] = useState("admin123");
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -24,7 +25,6 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
-      // Save token + user in localStorage
       setToken(data.token);
       setCurrentUser(data.user);
 
@@ -33,19 +33,15 @@ export default function LoginPage() {
         title: "Welcome back!",
         text: `Logged in as ${data.user?.full_name || "Admin"}`,
         timer: 1400,
-        timerProgressBar: true,
         showConfirmButton: false,
       });
 
-      setTimeout(() => {
-        router.push("/admin");
-      }, 200);
+      router.push("/admin");
     } catch (err) {
       Swal.fire({
         icon: "error",
         title: "Login failed",
         text: err.message || "Invalid credentials",
-        confirmButtonColor: "#0f172a",
       });
     } finally {
       setLoading(false);
@@ -53,38 +49,58 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4">
-      <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 bg-white/10 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden">
-        {/* Left / Branding */}
-        <div className="hidden md:flex flex-col justify-between bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-50 p-8">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-xs mb-4">
-              <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              <span>Secure Admin Panel</span>
+    <main className="min-h-screen flex items-center justify-center bg-slate-100 px-4">
+      <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200">
+
+        {/* LEFT: Image / Video */}
+        <div className="hidden md:block relative bg-slate-900">
+          {/* 🔁 Use VIDEO */}
+          <video
+            className="h-full w-full object-cover"
+            autoPlay
+            loop
+            muted
+            playsInline
+          >
+            {/* put your real video here */}
+            <source src="/admin-hero.mp4" type="video/mp4" />
+          </video>
+
+          {/* Or, if you prefer IMAGE, comment video above and use this:
+          <img
+            src="/admin-hero.jpg"
+            alt="Admin dashboard preview"
+            className="h-full w-full object-cover"
+          />
+          */}
+
+          {/* Optional overlay + small caption */}
+          <div className="absolute inset-0 bg-slate-900/40" />
+          <div className="absolute inset-0 flex flex-col justify-between p-8 text-slate-50">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs mb-4">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                <span>Secure Admin Panel</span>
+              </div>
+              <h1 className="text-3xl font-semibold mb-2">AW Admin Console</h1>
+              <p className="text-sm text-slate-200 max-w-sm">
+                Real-time control over users, roles and internal operations.
+              </p>
             </div>
-            <h1 className="text-3xl font-semibold tracking-tight mb-3">
-              AW Admin Console
-            </h1>
-            <p className="text-sm text-slate-300 max-w-sm">
-              Manage users, roles, and internal operations from a single clean,
-              secure dashboard built with Next.js and FastAPI.
+            <p className="text-[11px] text-slate-200/80">
+              FastAPI · JWT Auth · Role-based Access
             </p>
-          </div>
-          <div className="space-y-2 text-xs text-slate-400">
-            <p>• Role-based access: admin, manager, HR, employee</p>
-            <p>• JWT secured API on FastAPI backend</p>
-            <p>• Modern UI powered by Tailwind CSS</p>
           </div>
         </div>
 
-        {/* Right / Login form */}
-        <div className="bg-slate-50/90 p-6 sm:p-8 flex flex-col justify-center">
-          <div className="mb-6 flex items-center justify-center md:justify-start gap-2">
-            <div className="h-10 w-10 rounded-2xl bg-slate-900 flex items-center justify-center">
-              <FiLogIn className="text-slate-50" size={20} />
+        {/* RIGHT: Login Form */}
+        <div className="p-6 sm:p-8 flex flex-col justify-center bg-white">
+          <div className="mb-6 flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-slate-900 flex items-center justify-center">
+              <FiLogIn className="text-white" size={18} />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+              <p className="text-xs uppercase tracking-widest text-slate-400">
                 Sign in
               </p>
               <h2 className="text-lg font-semibold text-slate-900">
@@ -94,91 +110,68 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email */}
-            <div className="space-y-1">
-              <label className="block text-xs font-medium text-slate-600">
-                Email
+            {/* Email / Username */}
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">
+                Email or Username
               </label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-3 flex items-center text-slate-400">
-                  <FiMail size={16} />
-                </span>
+                <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <input
-                  type="email"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-10 py-2 text-sm outline-none ring-0 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 transition"
+                  type="text"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  autoComplete="email"
+                  placeholder="you@example.com or username"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-10 py-2 text-sm focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 outline-none"
+                  required
                 />
               </div>
             </div>
 
             {/* Password */}
-            <div className="space-y-1">
-              <label className="block text-xs font-medium text-slate-600">
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">
                 Password
               </label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-3 flex items-center text-slate-400">
-                  <FiLock size={16} />
-                </span>
+                <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <input
                   type={showPassword ? "text" : "password"}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-10 pr-10 py-2 text-sm outline-none ring-0 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 transition"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  autoComplete="current-password"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-10 pr-10 py-2 text-sm focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 outline-none"
+                  required
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-700"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
                 >
                   {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
                 </button>
               </div>
             </div>
 
-            {/* Remember & CTA */}
-            <div className="flex items-center justify-between text-xs text-slate-500">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  className="h-3 w-3 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
-                  defaultChecked
-                />
-                <span>Remember this device</span>
-              </label>
-            </div>
+            {/* Remember */}
+            <label className="flex items-center gap-2 text-xs text-slate-500">
+              <input type="checkbox" defaultChecked className="rounded" />
+              Remember this device
+            </label>
 
+            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 text-white py-2.5 text-sm font-medium shadow-lg shadow-slate-900/20 hover:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed transition"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-slate-900 text-white py-2.5 text-sm font-medium hover:bg-slate-800 transition disabled:opacity-60"
             >
-              {loading ? (
-                <>
-                  <span className="h-3 w-3 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                  Signing in…
-                </>
-              ) : (
-                <>
-                  <FiLogIn size={16} />
-                  <span>Sign In to Dashboard</span>
-                </>
-              )}
+              {loading ? "Signing in…" : "Sign In to Dashboard"}
             </button>
 
-            <p className="text-[11px] text-slate-400 text-center mt-2">
-              Use{" "}
-              <span className="font-medium text-slate-700">
-                admin@example.com
-              </span>{" "}
-              /{" "}
-              <span className="font-mono text-slate-700">admin123</span> (seed
-              admin).
+            <p className="text-[11px] text-slate-400 text-center">
+              Seed admin:{" "}
+              <span className="text-slate-700">admin@example.com</span> /{" "}
+              <span className="font-mono text-slate-700">admin123</span>
             </p>
           </form>
         </div>

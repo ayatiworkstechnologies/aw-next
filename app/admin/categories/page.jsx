@@ -1,117 +1,131 @@
-// app/admin/roles/page.jsx
+// app/admin/categories/page.jsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { apiFetch } from "../../lib/api";
 import Swal from "sweetalert2";
-import {
-  FiShield,
-  FiPlusCircle,
-  FiTrash2,
-  FiEdit2,
-  FiX,
-} from "react-icons/fi";
+import { FiTag, FiPlusCircle, FiEdit2, FiTrash2, FiX } from "react-icons/fi";
 
-export default function RolesPage() {
-  const [roles, setRoles] = useState([]);
+export default function CategoriesPage() {
+  const [categories, setCategories] = useState([]);
+  const [error, setError] = useState("");
 
-  // Create form + modal
+  // Create modal
   const [createOpen, setCreateOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", description: "" });
-  const [loading, setLoading] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    name: "",
+    slug: "",
+    description: "",
+  });
+  const [loadingCreate, setLoadingCreate] = useState(false);
 
   // Edit modal
   const [editOpen, setEditOpen] = useState(false);
-  const [editRole, setEditRole] = useState(null);
-  const [editForm, setEditForm] = useState({ name: "", description: "" });
+  const [editCategory, setEditCategory] = useState(null);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    slug: "",
+    description: "",
+  });
   const [loadingEdit, setLoadingEdit] = useState(false);
 
-  const [error, setError] = useState("");
-
-  async function loadRoles() {
+  async function loadCategories() {
     try {
-      const data = await apiFetch("/roles");
-      setRoles(data || []);
+      const data = await apiFetch("/categories");
+      setCategories(data || []);
     } catch (err) {
-      setError(err.message || "Failed to load roles");
+      setError(err.message || "Failed to load categories");
     }
   }
 
   useEffect(() => {
-    loadRoles();
+    loadCategories();
   }, []);
+
+  function toSlug(value) {
+    return value
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-");
+  }
 
   // CREATE
   async function handleCreate(e) {
     e.preventDefault();
     setError("");
-    setLoading(true);
+    setLoadingCreate(true);
+
     try {
-      await apiFetch("/roles", {
+      await apiFetch("/categories", {
         method: "POST",
-        body: JSON.stringify(form),
+        body: JSON.stringify(createForm),
       });
-      setForm({ name: "", description: "" });
+
+      setCreateForm({ name: "", slug: "", description: "" });
       setCreateOpen(false);
-      await loadRoles();
+      await loadCategories();
 
       Swal.fire({
         icon: "success",
-        title: "Role created",
+        title: "Category created",
         timer: 1200,
         showConfirmButton: false,
       });
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Failed to create category");
       Swal.fire({
         icon: "error",
-        title: "Failed to create role",
+        title: "Failed to create category",
         text: err.message || "Something went wrong",
       });
     } finally {
-      setLoading(false);
+      setLoadingCreate(false);
     }
   }
 
-  // EDIT MODAL OPEN/CLOSE
-  function openEditModal(role) {
-    setEditRole(role);
+  // EDIT OPEN/CLOSE
+  function openEditModal(category) {
+    setEditCategory(category);
     setEditForm({
-      name: role.name || "",
-      description: role.description || "",
+      name: category.name || "",
+      slug: category.slug || "",
+      description: category.description || "",
     });
     setEditOpen(true);
   }
 
   function closeEditModal() {
     setEditOpen(false);
-    setEditRole(null);
+    setEditCategory(null);
   }
 
   // UPDATE
   async function handleUpdate(e) {
     e.preventDefault();
-    if (!editRole) return;
+    if (!editCategory) return;
     setLoadingEdit(true);
 
     try {
-      await apiFetch(`/roles/${editRole.id}`, {
+      await apiFetch(`/categories/${editCategory.id}`, {
         method: "PUT",
         body: JSON.stringify(editForm),
       });
-      await loadRoles();
+
+      await loadCategories();
       closeEditModal();
 
       Swal.fire({
         icon: "success",
-        title: "Role updated",
+        title: "Category updated",
         timer: 1200,
         showConfirmButton: false,
       });
     } catch (err) {
       Swal.fire({
         icon: "error",
-        title: "Failed to update role",
+        title: "Failed to update category",
         text: err.message || "Something went wrong",
       });
     } finally {
@@ -123,8 +137,8 @@ export default function RolesPage() {
   async function handleDelete(id) {
     const result = await Swal.fire({
       icon: "warning",
-      title: "Delete this role?",
-      text: "If any users are linked, delete may fail.",
+      title: "Delete this category?",
+      text: "If any posts are linked, delete may fail.",
       showCancelButton: true,
       confirmButtonColor: "#b91c1c",
       cancelButtonColor: "#4b5563",
@@ -134,22 +148,24 @@ export default function RolesPage() {
     if (!result.isConfirmed) return;
 
     try {
-      await apiFetch(`/roles/${id}`, { method: "DELETE" });
-      await loadRoles();
+      await apiFetch(`/categories/${id}`, { method: "DELETE" });
+      await loadCategories();
       Swal.fire({
         icon: "success",
-        title: "Role deleted",
+        title: "Category deleted",
         timer: 1000,
         showConfirmButton: false,
       });
     } catch (err) {
       Swal.fire({
         icon: "error",
-        title: "Failed to delete role",
+        title: "Failed to delete category",
         text: err.message || "Something went wrong",
       });
     }
   }
+
+  const totalCategories = categories.length;
 
   return (
     <section className="space-y-6">
@@ -157,25 +173,25 @@ export default function RolesPage() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold tracking-tight flex items-center gap-2 text-slate-900">
-            <FiShield className="text-slate-500" />
-            Roles
+            <FiTag className="text-slate-500" />
+            Categories
           </h2>
           <p className="text-xs text-slate-500">
-            Define access levels like admin, manager, HR, employee.
+            Group your blogs into clear categories.
           </p>
         </div>
         <div className="flex items-center gap-3">
           <div className="px-3 py-2 rounded-2xl bg-slate-900 text-white text-xs inline-flex items-center gap-2">
-            <FiShield size={14} />
-            <span>Total roles:</span>
-            <span className="font-semibold">{roles.length}</span>
+            <FiTag size={14} />
+            <span>Total categories:</span>
+            <span className="font-semibold">{totalCategories}</span>
           </div>
           <button
             onClick={() => setCreateOpen(true)}
             className="inline-flex items-center gap-2 rounded-xl bg-primary text-white px-3 py-2 text-sm hover:opacity-95"
           >
             <FiPlusCircle size={16} />
-            Add role
+            Add category
           </button>
         </div>
       </div>
@@ -186,44 +202,50 @@ export default function RolesPage() {
         </p>
       )}
 
-      {/* Roles list */}
+      {/* Categories list */}
       <div className="bg-surface border border-border rounded-2xl shadow-sm p-4 sm:p-5">
         <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
-          <FiShield className="text-slate-500" size={14} />
-          All Roles
+          <FiTag className="text-slate-500" size={14} />
+          All Categories
         </h3>
 
         <div className="space-y-2">
-          {roles.map((r) => (
+          {categories.map((c) => (
             <div
-              key={r.id}
-              className="flex items-center justify-between gap-3 border border-border rounded-xl px-3 py-2 bg-white"
+              key={c.id}
+              className="flex items-start justify-between gap-3 border border-border rounded-xl px-3 py-3 bg-white"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-start gap-3">
                 <div className="h-8 w-8 rounded-full bg-slate-900 flex items-center justify-center text-[11px] uppercase text-white">
-                  {r.name?.[0]}
+                  {c.name?.[0]}
                 </div>
-                <div>
+                <div className="space-y-0.5">
                   <p className="text-sm font-medium text-slate-900">
-                    {r.name}
+                    {c.name}
                   </p>
-                  {r.description && (
-                    <p className="text-xs text-slate-500">
-                      {r.description}
+                  <p className="text-[11px] text-slate-400">
+                    slug:{" "}
+                    <span className="font-mono text-slate-600">
+                      {c.slug}
+                    </span>
+                  </p>
+                  {c.description && (
+                    <p className="text-xs text-slate-600 line-clamp-2">
+                      {c.description}
                     </p>
                   )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => openEditModal(r)}
+                  onClick={() => openEditModal(c)}
                   className="inline-flex items-center justify-center h-7 w-7 rounded-full border border-border text-slate-700 hover:bg-slate-100 text-[11px]"
                   title="Edit"
                 >
                   <FiEdit2 size={12} />
                 </button>
                 <button
-                  onClick={() => handleDelete(r.id)}
+                  onClick={() => handleDelete(c.id)}
                   className="inline-flex items-center justify-center h-7 w-7 rounded-full border border-red-200 text-red-600 hover:bg-red-50 text-[11px]"
                   title="Delete"
                 >
@@ -232,43 +254,71 @@ export default function RolesPage() {
               </div>
             </div>
           ))}
-          {roles.length === 0 && (
+
+          {categories.length === 0 && (
             <p className="text-xs text-slate-500">
-              No roles yet. Click “Add role” to create one.
+              No categories yet. Click “Add category” to create one.
             </p>
           )}
         </div>
       </div>
 
-      {/* CREATE Modal */}
+      {/* CREATE modal */}
       {createOpen && (
-        <Modal title="Add role" onClose={() => setCreateOpen(false)}>
+        <Modal title="Add category" onClose={() => setCreateOpen(false)}>
           <form onSubmit={handleCreate} className="space-y-3 text-xs">
             <div>
               <label className="block text-[11px] text-slate-500 mb-1">
-                Role name
+                Name
               </label>
               <input
-                className="w-full bg-white text-slate-900 border border-border rounded-xl px-3 py-2 text-xs outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/15"
-                placeholder="admin, manager, hr, employee..."
-                value={form.name}
-                onChange={(e) =>
-                  setForm({ ...form, name: e.target.value })
-                }
+                className="w-full bg-white text-slate-900 border border-border rounded-xl px-3 py-2 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/15"
+                value={createForm.name}
+                onChange={(e) => {
+                  const name = e.target.value;
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    name,
+                    slug: prev.slug || toSlug(name),
+                  }));
+                }}
                 required
               />
             </div>
 
             <div>
               <label className="block text-[11px] text-slate-500 mb-1">
-                Description
+                Slug
               </label>
               <input
-                className="w-full bg-white text-slate-900 border border-border rounded-xl px-3 py-2 text-xs outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/15"
-                placeholder="Short description"
-                value={form.description}
+                className="w-full bg-white text-slate-900 border border-border rounded-xl px-3 py-2 outline-none font-mono text-[11px] focus:border-slate-900 focus:ring-1 focus:ring-slate-900/15"
+                value={createForm.slug}
                 onChange={(e) =>
-                  setForm({ ...form, description: e.target.value })
+                  setCreateForm({
+                    ...createForm,
+                    slug: toSlug(e.target.value),
+                  })
+                }
+                required
+              />
+              <p className="text-[10px] text-slate-400 mt-0.5">
+                Used in URLs (must be unique).
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-[11px] text-slate-500 mb-1">
+                Description
+              </label>
+              <textarea
+                rows={3}
+                className="w-full bg-white text-slate-900 border border-border rounded-xl px-3 py-2 outline-none text-xs resize-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/15"
+                value={createForm.description}
+                onChange={(e) =>
+                  setCreateForm({
+                    ...createForm,
+                    description: e.target.value,
+                  })
                 }
               />
             </div>
@@ -283,26 +333,26 @@ export default function RolesPage() {
               </button>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loadingCreate}
                 className="px-4 py-1.5 rounded-full bg-slate-900 text-white text-[11px] font-medium hover:bg-slate-800 disabled:opacity-60"
               >
-                {loading ? "Creating…" : "Create Role"}
+                {loadingCreate ? "Creating…" : "Create category"}
               </button>
             </div>
           </form>
         </Modal>
       )}
 
-      {/* EDIT Modal */}
+      {/* EDIT modal */}
       {editOpen && (
-        <Modal title="Edit role" onClose={closeEditModal}>
+        <Modal title="Edit category" onClose={closeEditModal}>
           <form onSubmit={handleUpdate} className="space-y-3 text-xs">
             <div>
               <label className="block text-[11px] text-slate-500 mb-1">
-                Role name
+                Name
               </label>
               <input
-                className="w-full bg-white text-slate-900 border border-border rounded-xl px-3 py-2 text-xs outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/15"
+                className="w-full bg-white text-slate-900 border border-border rounded-xl px-3 py-2 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/15"
                 value={editForm.name}
                 onChange={(e) =>
                   setEditForm({ ...editForm, name: e.target.value })
@@ -313,10 +363,28 @@ export default function RolesPage() {
 
             <div>
               <label className="block text-[11px] text-slate-500 mb-1">
-                Description
+                Slug
               </label>
               <input
-                className="w-full bg-white text-slate-900 border border-border rounded-xl px-3 py-2 text-xs outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/15"
+                className="w-full bg-white text-slate-900 border border-border rounded-xl px-3 py-2 outline-none font-mono text-[11px] focus:border-slate-900 focus:ring-1 focus:ring-slate-900/15"
+                value={editForm.slug}
+                onChange={(e) =>
+                  setEditForm({
+                    ...editForm,
+                    slug: toSlug(e.target.value),
+                  })
+                }
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] text-slate-500 mb-1">
+                Description
+              </label>
+              <textarea
+                rows={3}
+                className="w-full bg-white text-slate-900 border border-border rounded-xl px-3 py-2 outline-none text-xs resize-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/15"
                 value={editForm.description}
                 onChange={(e) =>
                   setEditForm({
@@ -340,7 +408,7 @@ export default function RolesPage() {
                 disabled={loadingEdit}
                 className="px-4 py-1.5 rounded-full bg-slate-900 text-white text-[11px] font-medium hover:bg-slate-800 disabled:opacity-60"
               >
-                {loadingEdit ? "Saving..." : "Save changes"}
+                {loadingEdit ? "Saving…" : "Save changes"}
               </button>
             </div>
           </form>
@@ -350,7 +418,7 @@ export default function RolesPage() {
   );
 }
 
-/* ---------- Shared Modal component ---------- */
+/* local modal */
 function Modal({ title, onClose, children }) {
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">

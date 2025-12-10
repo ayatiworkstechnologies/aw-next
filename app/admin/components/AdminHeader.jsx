@@ -18,7 +18,6 @@ export default function AdminHeader({ user, onLogout, onOpenSidebar }) {
       .map((p) => p[0]?.toUpperCase())
       .join("") || "AW";
 
-  // click outside to close
   useEffect(() => {
     function handleClickOutside(e) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -35,17 +34,17 @@ export default function AdminHeader({ user, onLogout, onOpenSidebar }) {
   }, [dropdownOpen]);
 
   return (
-    <header className="h-16 flex items-center justify-between px-4 lg:px-6 border-b border-slate-800/60 bg-slate-950/80 backdrop-blur-md sticky top-0 z-30">
+    <header className="h-16 flex items-center justify-between px-4 lg:px-6 border-b border-border bg-surface/95 backdrop-blur-md sticky top-0 z-30">
       {/* Left side */}
       <div className="flex items-center gap-3">
         <button
-          className="lg:hidden h-9 w-9 rounded-full border border-slate-700 flex items-center justify-center text-slate-200 hover:bg-slate-800/80"
+          className="lg:hidden h-9 w-9 rounded-full border border-border flex items-center justify-center text-slate-700 hover:bg-slate-100"
           onClick={onOpenSidebar}
         >
           <FiMenu size={18} />
         </button>
         <div className="hidden lg:flex flex-col">
-          <span className="text-xs text-slate-500">AW Admin</span>
+          <span className="text-xs text-slate-500 font-medium">AW Admin</span>
           <span className="text-[11px] text-slate-400">
             Internal management console
           </span>
@@ -53,67 +52,68 @@ export default function AdminHeader({ user, onLogout, onOpenSidebar }) {
       </div>
 
       {/* Right side: avatar dropdown */}
-      <div className="flex items-center gap-3" ref={dropdownRef}>
+      <div className="flex items-center gap-3 relative" ref={dropdownRef}>
         <div className="hidden sm:flex flex-col items-end">
-          <span className="text-xs text-slate-100 font-medium">
+          <span className="text-xs text-slate-900 font-medium">
             {user.full_name}
           </span>
-          <span className="text-[11px] text-slate-400 max-w-[180px] truncate">
+          <span className="text-[11px] text-slate-500 max-w-[200px] truncate">
             {user.email}
           </span>
         </div>
 
         <button
           onClick={() => setDropdownOpen((o) => !o)}
-          className="relative h-9 w-9 rounded-full bg-slate-800 flex items-center justify-center text-xs font-semibold text-slate-100 border border-slate-700 hover:border-slate-500"
+          className="relative h-9 w-9 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-semibold hover:bg-slate-800"
         >
           {initials}
         </button>
 
         {dropdownOpen && (
-          <div className="absolute right-4 top-14 w-60 bg-slate-950 border border-slate-800 rounded-2xl shadow-xl overflow-hidden text-xs">
-            <div className="px-3 py-3 border-b border-slate-800 flex gap-2">
-              <div className="h-8 w-8 rounded-full bg-slate-800 flex items-center justify-center text-[11px] font-semibold">
+          <div className="absolute right-0 top-11 w-60 bg-surface border border-border rounded-2xl shadow-xl overflow-hidden text-xs">
+            <div className="px-3 py-3 border-b border-border flex gap-2 bg-slate-50">
+              <div className="h-8 w-8 rounded-full bg-slate-900 text-white flex items-center justify-center text-[11px] font-semibold">
                 {initials}
               </div>
               <div className="min-w-0">
-                <p className="text-xs text-slate-100 font-medium truncate">
+                <p className="text-xs text-slate-900 font-medium truncate">
                   {user.full_name}
                 </p>
-                <p className="text-[11px] text-slate-400 truncate">
+                <p className="text-[11px] text-slate-500 truncate">
                   {user.email}
                 </p>
-                <p className="text-[10px] text-slate-500 uppercase tracking-wide mt-0.5">
+                <p className="text-[10px] text-slate-400 uppercase tracking-wide mt-0.5">
                   {user.role?.name || "User"}
                 </p>
               </div>
             </div>
 
-            {/* Profile / Settings button */}
+            {/* Profile / Settings */}
             <button
               type="button"
-              className="w-full flex items-center gap-2 px-3 py-2 text-left text-slate-200 hover:bg-slate-900"
+              className="w-full flex items-center gap-2 px-3 py-2 text-left text-slate-700 hover:bg-slate-50"
               onClick={() => {
                 setDropdownOpen(false);
-                router.push("/admin/settings"); // or "/admin/profile" if you prefer
+                router.push("/admin/settings");
               }}
             >
-              <span className="h-6 w-6 rounded-full bg-slate-800 flex items-center justify-center">
-                <FiUser size={13} className="text-slate-200" />
+              <span className="h-6 w-6 rounded-full bg-slate-100 flex items-center justify-center">
+                <FiUser size={13} className="text-slate-700" />
               </span>
               <span>Profile & Settings</span>
             </button>
 
+            {/* Logout */}
             <button
               type="button"
               onClick={() => {
                 setDropdownOpen(false);
                 onLogout();
               }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-left text-red-300 hover:bg-red-950/40"
+              className="w-full flex items-center gap-2 px-3 py-2 text-left text-red-600 hover:bg-red-50"
             >
-              <span className="h-6 w-6 rounded-full bg-red-900/50 flex items-center justify-center">
-                <FiLogOut size={13} className="text-red-200" />
+              <span className="h-6 w-6 rounded-full bg-red-100 flex items-center justify-center">
+                <FiLogOut size={13} className="text-red-600" />
               </span>
               <span>Logout</span>
             </button>
