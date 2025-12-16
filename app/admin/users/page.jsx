@@ -1,4 +1,3 @@
-// app/admin/users/page.jsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -10,462 +9,357 @@ import {
   FiEdit2,
   FiTrash2,
   FiX,
-  FiMail,
-  FiLock,
   FiShield,
   FiCheckCircle,
 } from "react-icons/fi";
 
+/* ================= CONSTANTS ================= */
+const DEPARTMENTS = [
+  "Graphic Design",
+  "HR",
+  "Web Development",
+  "Content",
+  "SEO",
+  "Social Media",
+  "Video Editing",
+  "Intern",
+];
+
+/* ================= PAGE ================= */
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
 
-  // Create form (for modal)
   const [createOpen, setCreateOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editUser, setEditUser] = useState(null);
+
+  const [loading, setLoading] = useState(false);
+  const [loadingEdit, setLoadingEdit] = useState(false);
+
   const [createForm, setCreateForm] = useState({
+    username: "",
     full_name: "",
     email: "",
     password: "",
+    dept: "",
     role_id: "",
   });
 
-  // Edit modal
-  const [editOpen, setEditOpen] = useState(false);
-  const [editUser, setEditUser] = useState(null);
   const [editForm, setEditForm] = useState({
+    username: "",
     full_name: "",
     email: "",
     password: "",
+    dept: "",
     role_id: "",
     is_active: true,
   });
 
-  const [loading, setLoading] = useState(false);
-  const [loadingEdit, setLoadingEdit] = useState(false);
-  const [error, setError] = useState("");
-
   async function loadData() {
-    try {
-      const [usersData, rolesData] = await Promise.all([
-        apiFetch("/users"),
-        apiFetch("/roles"),
-      ]);
-      setUsers(usersData || []);
-      setRoles(rolesData || []);
-    } catch (err) {
-      setError(err?.message || "Failed to load data");
-    }
+    const [u, r] = await Promise.all([
+      apiFetch("/users"),
+      apiFetch("/roles"),
+    ]);
+    setUsers(u || []);
+    setRoles(r || []);
   }
 
   useEffect(() => {
     loadData();
   }, []);
 
-  // ===== CREATE USER =====
+  /* ================= CREATE ================= */
   async function handleCreate(e) {
-    e && e.preventDefault();
-    setError("");
+    e.preventDefault();
     setLoading(true);
+
     try {
       await apiFetch("/users", {
         method: "POST",
         body: JSON.stringify(createForm),
       });
 
-      setCreateForm({ full_name: "", email: "", password: "", role_id: "" });
+      setCreateForm({
+        username: "",
+        full_name: "",
+        email: "",
+        password: "",
+        dept: "",
+        role_id: "",
+      });
+
       setCreateOpen(false);
       await loadData();
 
-      Swal.fire({
-        icon: "success",
-        title: "User created",
-        text: "The user has been added successfully.",
-        timer: 1200,
-        showConfirmButton: false,
-      });
+      Swal.fire({ icon: "success", title: "User created", timer: 1200, showConfirmButton: false });
     } catch (err) {
-      setError(err?.message || "Failed to create user");
-      Swal.fire({
-        icon: "error",
-        title: "Failed to create user",
-        text: err?.message || "Something went wrong",
-      });
+      Swal.fire({ icon: "error", title: "Failed", text: err?.message });
     } finally {
       setLoading(false);
     }
   }
 
-  // ===== OPEN EDIT MODAL =====
-  function openEditModal(user) {
+  /* ================= EDIT ================= */
+  function openEdit(user) {
     setEditUser(user);
     setEditForm({
-      full_name: user.full_name || "",
-      email: user.email || "",
+      username: user.username,
+      full_name: user.full_name,
+      email: user.email,
       password: "",
+      dept: user.dept || "",
       role_id: user.role?.id || "",
-      is_active: !!user.is_active,
+      is_active: user.is_active,
     });
     setEditOpen(true);
   }
 
-  function closeEditModal() {
-    setEditOpen(false);
-    setEditUser(null);
-  }
-
-  // ===== UPDATE USER =====
   async function handleUpdate(e) {
-    e && e.preventDefault();
-    if (!editUser) return;
+    e.preventDefault();
     setLoadingEdit(true);
 
-    try {
-      const body = {
-        full_name: editForm.full_name,
-        email: editForm.email,
-        is_active: editForm.is_active,
-        role_id: editForm.role_id,
-      };
+    const payload = { ...editForm };
+    if (!payload.password) delete payload.password;
 
-      if (editForm.password?.trim()) {
-        body.password = editForm.password.trim();
-      }
-
-      await apiFetch(`/users/${editUser.id}`, {
-        method: "PUT",
-        body: JSON.stringify(body),
-      });
-
-      await loadData();
-      closeEditModal();
-
-      Swal.fire({
-        icon: "success",
-        title: "User updated",
-        timer: 1200,
-        showConfirmButton: false,
-      });
-    } catch (err) {
-      Swal.fire({
-        icon: "error",
-        title: "Failed to update user",
-        text: err?.message || "Something went wrong",
-      });
-    } finally {
-      setLoadingEdit(false);
-    }
-  }
-
-  // ===== DELETE USER =====
-  async function handleDelete(id) {
-    const result = await Swal.fire({
-      icon: "warning",
-      title: "Delete this user?",
-      text: "This action cannot be undone.",
-      showCancelButton: true,
-      confirmButtonColor: "#b91c1c",
-      cancelButtonColor: "#4b5563",
-      confirmButtonText: "Yes, delete",
+    await apiFetch(`/users/${editUser.id}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
     });
 
-    if (!result.isConfirmed) return;
+    setEditOpen(false);
+    await loadData();
 
-    try {
-      await apiFetch(`/users/${id}`, { method: "DELETE" });
-      await loadData();
-      Swal.fire({
-        icon: "success",
-        title: "User deleted",
-        timer: 1000,
-        showConfirmButton: false,
-      });
-    } catch (err) {
-      Swal.fire({
-        icon: "error",
-        title: "Failed to delete user",
-        text: err?.message || "Something went wrong",
-      });
-    }
+    Swal.fire({ icon: "success", title: "Updated", timer: 1000, showConfirmButton: false });
+    setLoadingEdit(false);
+  }
+
+  async function handleDelete(id) {
+    const ok = await Swal.fire({
+      title: "Delete user?",
+      text: "This cannot be undone",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+    });
+
+    if (!ok.isConfirmed) return;
+
+    await apiFetch(`/users/${id}`, { method: "DELETE" });
+    await loadData();
   }
 
   const totalUsers = users.length;
-  const activeUsers = users.filter((u) => u.is_active).length;
+  const activeUsers = users.filter(u => u.is_active).length;
 
   return (
     <section className="space-y-6">
-      {/* Header + stats + Add button */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight flex items-center gap-2 text-slate-900">
-            <FiUsers className="text-slate-500" />
-            Users
-          </h2>
-          <p className="text-xs text-slate-500">
-            Manage admin, HR, managers, and employees.
-          </p>
+      {/* ================= HEADER ================= */}
+      <header className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <FiUsers className="text-indigo-600" />
+          <div>
+            <h1 className="text-lg font-semibold">Users</h1>
+            <p className="text-xs text-slate-500">Manage employees & access</p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex gap-2 text-xs">
-            <div className="px-3 py-2 rounded-2xl bg-slate-900 text-white flex items-center gap-2">
-              <FiUsers size={14} />
-              <span>Total:</span>
-              <span className="font-semibold">{totalUsers}</span>
-            </div>
-            <div className="px-3 py-2 rounded-2xl bg-emerald-50 text-emerald-800 border border-emerald-100 flex items-center gap-2">
-              <FiCheckCircle size={14} />
-              <span>Active:</span>
-              <span className="font-semibold">{activeUsers}</span>
-            </div>
-          </div>
+        <div className="flex gap-3">
+          <Stat label="Total" value={totalUsers} dark />
+          <Stat label="Active" value={activeUsers} />
 
           <button
             onClick={() => setCreateOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-primary text-white px-3 py-2 text-sm hover:opacity-95"
+            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-700"
           >
-            <FiUserPlus />
-            Add user
+            <FiUserPlus /> Add User
           </button>
         </div>
-      </div>
+      </header>
 
-      {error && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-md px-3 py-2">
-          {error}
-        </p>
-      )}
+      {/* ================= TABLE ================= */}
+      <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
+        <table className="w-full text-xs">
+          <thead className="bg-slate-50 text-slate-500">
+            <tr>
+              <th className="px-4 py-3 text-left">User</th>
+              <th className="px-4 py-3">Department</th>
+              <th className="px-4 py-3">Role</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
 
-      {/* Users table */}
-      <div className="bg-surface border border-border rounded-2xl shadow-sm p-4 sm:p-5">
-        <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
-          <FiUsers className="text-slate-500" size={14} />
-          All Users
-        </h3>
-        <div className="overflow-x-auto rounded-xl border border-border bg-white">
-          <table className="w-full text-xs border-collapse">
-            <thead>
-              <tr className="bg-slate-50 text-[11px] text-slate-500">
-                <th className="text-left px-3 py-2 border-b border-border">ID</th>
-                <th className="text-left px-3 py-2 border-b border-border">Name</th>
-                <th className="text-left px-3 py-2 border-b border-border">Email</th>
-                <th className="text-left px-3 py-2 border-b border-border">Role</th>
-                <th className="text-left px-3 py-2 border-b border-border">Active</th>
-                <th className="text-right px-3 py-2 border-b border-border">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id} className="border-b border-border last:border-0 hover:bg-slate-50 transition">
-                  <td className="px-3 py-2 text-slate-500">{u.id}</td>
-                  <td className="px-3 py-2 text-slate-900">{u.full_name}</td>
-                  <td className="px-3 py-2 text-slate-600">{u.email}</td>
-                  <td className="px-3 py-2 text-slate-700">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] uppercase tracking-wide">
-                      <FiShield size={10} />
-                      {u.role?.name || "—"}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2">
-                    {u.is_active ? (
-                      <span className="inline-flex items-center gap-1 text-emerald-600 text-[11px]">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                        Active
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-slate-500 text-[11px]">
-                        <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
-                        Inactive
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-right">
-                    <div className="inline-flex items-center gap-2">
-                      <button
-                        onClick={() => openEditModal(u)}
-                        className="inline-flex items-center justify-center h-7 w-7 rounded-full border border-border text-slate-700 hover:bg-slate-100 text-[11px]"
-                        title="Edit"
-                      >
-                        <FiEdit2 size={12} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(u.id)}
-                        className="inline-flex items-center justify-center h-7 w-7 rounded-full border border-red-200 text-red-600 hover:bg-red-50 text-[11px]"
-                        title="Delete"
-                      >
-                        <FiTrash2 size={12} />
-                      </button>
+          <tbody>
+            {users.map(u => (
+              <tr key={u.id} className="border-t hover:bg-slate-50">
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-semibold">
+                      {u.full_name?.[0]}
                     </div>
-                  </td>
-                </tr>
-              ))}
-              {users.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-3 py-4 text-center text-xs text-slate-500">
-                    No users yet. Click “Add user” to create one.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                    <div>
+                      <p className="font-medium">{u.full_name}</p>
+                      <p className="text-[11px] text-slate-500">{u.email}</p>
+                    </div>
+                  </div>
+                </td>
+
+                <td className="px-4 py-3">
+                  {u.dept ? (
+                    <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-medium">
+                      {u.dept}
+                    </span>
+                  ) : "—"}
+                </td>
+
+                <td className="px-4 py-3">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] text-indigo-700 uppercase">
+                    <FiShield size={10} /> {u.role?.name}
+                  </span>
+                </td>
+
+                <td className="px-4 py-3">
+                  {u.is_active ? (
+                    <span className="inline-flex items-center gap-1 text-emerald-600">
+                      <FiCheckCircle /> Active
+                    </span>
+                  ) : (
+                    <span className="text-slate-400">Inactive</span>
+                  )}
+                </td>
+
+                <td className="px-4 py-3 text-right space-x-1">
+                  <IconBtn onClick={() => openEdit(u)}><FiEdit2 /></IconBtn>
+                  <IconBtn danger onClick={() => handleDelete(u.id)}><FiTrash2 /></IconBtn>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      {/* CREATE Modal */}
       {createOpen && (
-        <Modal onClose={() => setCreateOpen(false)} title="Add user">
-          <form onSubmit={handleCreate} className="space-y-3 text-xs">
-            <div>
-              <label className="block text-[11px] text-slate-500 mb-1">Full name</label>
-              <input
-                className="w-full bg-white text-slate-900 border border-border rounded-xl px-3 py-2 text-xs outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/15"
-                value={createForm.full_name}
-                onChange={(e) => setCreateForm({ ...createForm, full_name: e.target.value })}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] text-slate-500 mb-1">Email</label>
-              <input
-                className="w-full bg-white text-slate-900 border border-border rounded-xl px-3 py-2 text-xs outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/15"
-                type="email"
-                value={createForm.email}
-                onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] text-slate-500 mb-1">Password</label>
-              <input
-                className="w-full bg-white text-slate-900 border border-border rounded-xl px-3 py-2 text-xs outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/15"
-                type="password"
-                value={createForm.password}
-                onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] text-slate-500 mb-1">Role</label>
-              <select
-                className="w-full bg-white text-slate-900 border border-border rounded-xl px-3 py-2 text-xs outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/15"
-                value={createForm.role_id}
-                onChange={(e) => setCreateForm({ ...createForm, role_id: e.target.value })}
-                required
-              >
-                <option value="">Select role</option>
-                {roles.map((r) => (
-                  <option key={r.id} value={r.id}>{r.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button type="button" onClick={() => setCreateOpen(false)} className="px-3 py-1.5 rounded-full border border-border text-[11px] text-slate-700 hover:bg-slate-100">
-                Cancel
-              </button>
-              <button type="submit" disabled={loading} className="px-4 py-1.5 rounded-full bg-slate-900 text-white text-[11px] font-medium hover:bg-slate-800">
-                {loading ? "Creating..." : "Create"}
-              </button>
-            </div>
-          </form>
+        <Modal title="Add user" onClose={() => setCreateOpen(false)}>
+          <UserForm
+            form={createForm}
+            setForm={setCreateForm}
+            roles={roles}
+            submitLabel={loading ? "Creating..." : "Create user"}
+            onSubmit={handleCreate}
+          />
         </Modal>
       )}
 
-      {/* EDIT Modal */}
       {editOpen && (
-        <Modal onClose={closeEditModal} title="Edit user">
-          <form onSubmit={handleUpdate} className="space-y-3 text-xs">
-            <div>
-              <label className="block text-[11px] text-slate-500 mb-1">Full name</label>
-              <input
-                className="w-full bg-white text-slate-900 border border-border rounded-xl px-3 py-2 text-xs outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/15"
-                value={editForm.full_name}
-                onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] text-slate-500 mb-1">Email</label>
-              <input
-                className="w-full bg-white text-slate-900 border border-border rounded-xl px-3 py-2 text-xs outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/15"
-                type="email"
-                value={editForm.email}
-                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] text-slate-500 mb-1">New password (optional)</label>
-              <input
-                className="w-full bg-white text-slate-900 border border-border rounded-xl px-3 py-2 text-xs outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/15"
-                type="password"
-                placeholder="Leave blank to keep current password"
-                value={editForm.password}
-                onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] text-slate-500 mb-1">Role</label>
-              <select
-                className="w-full bg-white text-slate-900 border border-border rounded-xl px-3 py-2 text-xs outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/15"
-                value={editForm.role_id}
-                onChange={(e) => setEditForm({ ...editForm, role_id: e.target.value })}
-                required
-              >
-                <option value="">Select role</option>
-                {roles.map((r) => (
-                  <option key={r.id} value={r.id}>{r.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-[11px] text-slate-500 mb-1">Status</label>
-              <button
-                type="button"
-                onClick={() => setEditForm(prev => ({ ...prev, is_active: !prev.is_active }))}
-                className={`w-full inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-[11px] border ${editForm.is_active ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-slate-50 border-border text-slate-600"}`}
-              >
-                <span className={`h-1.5 w-1.5 rounded-full ${editForm.is_active ? "bg-emerald-500" : "bg-slate-400"}`}></span>
-                {editForm.is_active ? "Active" : "Inactive"}
-              </button>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button type="button" onClick={closeEditModal} className="px-3 py-1.5 rounded-full border border-border text-[11px] text-slate-700 hover:bg-slate-100">
-                Cancel
-              </button>
-              <button type="submit" disabled={loadingEdit} className="px-4 py-1.5 rounded-full bg-slate-900 text-white text-[11px] font-medium hover:bg-slate-800">
-                {loadingEdit ? "Saving..." : "Save changes"}
-              </button>
-            </div>
-          </form>
+        <Modal title="Edit user" onClose={() => setEditOpen(false)}>
+          <UserForm
+            isEdit
+            form={editForm}
+            setForm={setEditForm}
+            roles={roles}
+            submitLabel={loadingEdit ? "Saving..." : "Save changes"}
+            onSubmit={handleUpdate}
+          />
         </Modal>
       )}
     </section>
   );
 }
 
-/* ---------- Modal component (local, simple) ---------- */
-function Modal({ children, onClose, title }) {
+/* ================= COMPONENTS ================= */
+
+function Stat({ label, value, dark }) {
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-md bg-surface border border-border rounded-2xl p-5 shadow-xl">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
-          </div>
-          <button onClick={onClose} className="h-8 w-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100">
-            <FiX size={16} />
+    <div className={`px-4 py-2 rounded-xl text-xs font-medium shadow ${
+      dark ? "bg-slate-900 text-white" : "bg-emerald-50 text-emerald-700 border"
+    }`}>
+      {label}: {value}
+    </div>
+  );
+}
+
+function IconBtn({ children, danger, ...props }) {
+  return (
+    <button
+      {...props}
+      className={`h-8 w-8 rounded-full inline-flex items-center justify-center
+        ${danger ? "text-red-600 hover:bg-red-50" : "text-indigo-600 hover:bg-indigo-50"}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function UserForm({ form, setForm, roles, onSubmit, submitLabel, isEdit }) {
+  const input =
+    "w-full rounded-xl border border-slate-300 px-3 py-2 text-xs focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100";
+
+  return (
+    <form onSubmit={onSubmit} className="space-y-4">
+      <input className={input} placeholder="Username" value={form.username}
+        onChange={e => setForm({ ...form, username: e.target.value })} required />
+
+      <input className={input} placeholder="Full name" value={form.full_name}
+        onChange={e => setForm({ ...form, full_name: e.target.value })} required />
+
+      <input className={input} type="email" placeholder="Email" value={form.email}
+        onChange={e => setForm({ ...form, email: e.target.value })} required />
+
+      <select className={input} value={form.dept}
+        onChange={e => setForm({ ...form, dept: e.target.value })}>
+        <option value="">Select department</option>
+        {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+      </select>
+
+      <input className={input} type="password"
+        placeholder={isEdit ? "New password (optional)" : "Password"}
+        value={form.password}
+        onChange={e => setForm({ ...form, password: e.target.value })}
+        required={!isEdit}
+      />
+
+      <select className={input} value={form.role_id}
+        onChange={e => setForm({ ...form, role_id: e.target.value })} required>
+        <option value="">Select role</option>
+        {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+      </select>
+
+      {isEdit && (
+        <div className="flex items-center justify-between rounded-xl border px-3 py-2">
+          <span className="text-xs text-slate-600">Active user</span>
+          <button
+            type="button"
+            onClick={() => setForm(p => ({ ...p, is_active: !p.is_active }))}
+            className={`relative w-11 h-6 rounded-full ${
+              form.is_active ? "bg-emerald-500" : "bg-slate-300"
+            }`}
+          >
+            <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${
+              form.is_active ? "left-5" : "left-0.5"
+            }`} />
           </button>
         </div>
+      )}
 
-        <div>{children}</div>
+      <button className="w-full rounded-xl bg-indigo-600 py-2 text-xs font-medium text-white hover:bg-indigo-700">
+        {submitLabel}
+      </button>
+    </form>
+  );
+}
+
+function Modal({ title, children, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+      <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+        <div className="mb-4 flex justify-between items-center">
+          <h3 className="text-sm font-semibold">{title}</h3>
+          <button onClick={onClose} className="h-8 w-8 rounded-full hover:bg-slate-100 flex items-center justify-center">
+            <FiX />
+          </button>
+        </div>
+        {children}
       </div>
     </div>
   );

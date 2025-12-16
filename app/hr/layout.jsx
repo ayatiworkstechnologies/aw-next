@@ -1,18 +1,17 @@
-// app/admin/layout.jsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
-  clearToken,
   getToken,
   getCurrentUser,
+  clearToken,
   clearCurrentUser,
 } from "../lib/api";
-import AdminSidebar from "./components/AdminSidebar";
-import AdminHeader from "./components/AdminHeader";
+import HRSidebar from "./components/HRSidebar";
+import HRHeader from "./components/HRHeader";
 
-export default function AdminLayout({ children }) {
+export default function HRLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState(null);
@@ -21,14 +20,16 @@ export default function AdminLayout({ children }) {
 
   useEffect(() => {
     const token = getToken();
-    if (!token) {
+    const storedUser = getCurrentUser();
+
+    if (!token || !storedUser) {
+      clearToken();
+      clearCurrentUser();
       router.replace("/");
       return;
     }
 
-    const storedUser = getCurrentUser();
-    if (!storedUser) {
-      clearToken();
+    if (storedUser?.role?.name?.toLowerCase() !== "hr") {
       router.replace("/");
       return;
     }
@@ -45,18 +46,15 @@ export default function AdminLayout({ children }) {
 
   if (checking) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-background text-foreground">
-        <div className="flex items-center gap-2 text-sm">
-          <span className="h-3 w-3 rounded-full border-2 border-slate-400 border-t-transparent animate-spin" />
-          Checking access…
-        </div>
+      <main className="min-h-screen flex items-center justify-center">
+        <span className="animate-spin h-4 w-4 border-2 border-slate-400 border-t-transparent rounded-full" />
       </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex">
-      <AdminSidebar
+    <div className="min-h-screen flex bg-background text-foreground">
+      <HRSidebar
         user={user}
         pathname={pathname}
         sidebarOpen={sidebarOpen}
@@ -65,14 +63,14 @@ export default function AdminLayout({ children }) {
       />
 
       <div className="flex-1 flex flex-col">
-        <AdminHeader
+        <HRHeader
           user={user}
-          onLogout={handleLogout}
           onOpenSidebar={() => setSidebarOpen(true)}
+          onLogout={handleLogout}
         />
 
-        <main className="flex-1 p-4 lg:p-6">
-          <div className="max-w-6xl mx-auto">{children}</div>
+        <main className="flex-1 p-4 lg:p-6 max-w-6xl mx-auto">
+          {children}
         </main>
       </div>
     </div>
