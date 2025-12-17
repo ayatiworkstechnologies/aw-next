@@ -16,12 +16,14 @@ import {
   FiPlusSquare,
   FiTag,
   FiUser,
+  FiCodepen
 } from "react-icons/fi";
 
 const mainNavItems = [
   { href: "/admin", label: "Dashboard", icon: FiGrid },
   { href: "/admin/users", label: "Users", icon: FiUsers },
   { href: "/admin/roles", label: "Roles", icon: FiShield },
+  { href: "/admin/departments", label: "Departments", icon: FiCodepen },
   { href: "/admin/settings", label: "Settings", icon: FiSettings },
 ];
 

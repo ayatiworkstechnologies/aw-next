@@ -1,8 +1,8 @@
 // app/lib/api.js
 
 // const API_URL = "http://127.0.0.1:5000/api";
-// const API_URL = "http://127.0.0.1:8000/api";
-const API_URL = "https://54.147.145.228/api";
+const API_URL = "http://127.0.0.1:8000/api";
+// const API_URL = "https://54.147.145.228/api";
 
 const TOKEN_KEY = "aw_admin_token";
 const USER_KEY = "aw_admin_user";

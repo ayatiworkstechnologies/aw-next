@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { apiFetch } from "../../lib/api";
 import Swal from "sweetalert2";
 import {
@@ -11,24 +11,15 @@ import {
   FiX,
   FiShield,
   FiCheckCircle,
+  FiLayers,
+  FiEye,
+  FiEyeOff,
 } from "react-icons/fi";
 
-/* ================= CONSTANTS ================= */
-const DEPARTMENTS = [
-  "Graphic Design",
-  "HR",
-  "Web Development",
-  "Content",
-  "SEO",
-  "Social Media",
-  "Video Editing",
-  "Intern",
-];
-
-/* ================= PAGE ================= */
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
+  const [departments, setDepartments] = useState([]);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -37,64 +28,68 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(false);
   const [loadingEdit, setLoadingEdit] = useState(false);
 
-  const [createForm, setCreateForm] = useState({
+  const emptyForm = {
     username: "",
     full_name: "",
     email: "",
     password: "",
-    dept: "",
+    confirm_password: "",
     role_id: "",
-  });
-
-  const [editForm, setEditForm] = useState({
-    username: "",
-    full_name: "",
-    email: "",
-    password: "",
-    dept: "",
-    role_id: "",
+    department_id: "",
     is_active: true,
-  });
+  };
 
-  async function loadData() {
-    const [u, r] = await Promise.all([
+  const [createForm, setCreateForm] = useState(emptyForm);
+  const [editForm, setEditForm] = useState(emptyForm);
+
+  const [showPassword, setShowPassword] = useState(false);
+
+  /* ================= LOAD DATA (FIXED) ================= */
+  const loadData = useCallback(async () => {
+    const [u, r, d] = await Promise.all([
       apiFetch("/users"),
       apiFetch("/roles"),
+      apiFetch("/departments"),
     ]);
+
     setUsers(u || []);
     setRoles(r || []);
-  }
+    setDepartments(d || []);
+  }, []);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   /* ================= CREATE ================= */
   async function handleCreate(e) {
     e.preventDefault();
+
+    if (createForm.password !== createForm.confirm_password) {
+      return Swal.fire("Error", "Passwords do not match", "error");
+    }
+
     setLoading(true);
 
     try {
+      const payload = { ...createForm };
+      delete payload.confirm_password;
+
       await apiFetch("/users", {
         method: "POST",
-        body: JSON.stringify(createForm),
+        body: JSON.stringify(payload),
       });
 
-      setCreateForm({
-        username: "",
-        full_name: "",
-        email: "",
-        password: "",
-        dept: "",
-        role_id: "",
-      });
-
+      setCreateForm(emptyForm);
       setCreateOpen(false);
       await loadData();
 
-      Swal.fire({ icon: "success", title: "User created", timer: 1200, showConfirmButton: false });
-    } catch (err) {
-      Swal.fire({ icon: "error", title: "Failed", text: err?.message });
+      Swal.fire({
+        icon: "success",
+        title: "User created",
+        timer: 1200,
+        showConfirmButton: false,
+      });
     } finally {
       setLoading(false);
     }
@@ -108,8 +103,9 @@ export default function UsersPage() {
       full_name: user.full_name,
       email: user.email,
       password: "",
-      dept: user.dept || "",
+      confirm_password: "",
       role_id: user.role?.id || "",
+      department_id: user.department?.id || "",
       is_active: user.is_active,
     });
     setEditOpen(true);
@@ -117,9 +113,18 @@ export default function UsersPage() {
 
   async function handleUpdate(e) {
     e.preventDefault();
+
+    if (
+      editForm.password &&
+      editForm.password !== editForm.confirm_password
+    ) {
+      return Swal.fire("Error", "Passwords do not match", "error");
+    }
+
     setLoadingEdit(true);
 
     const payload = { ...editForm };
+    delete payload.confirm_password;
     if (!payload.password) delete payload.password;
 
     await apiFetch(`/users/${editUser.id}`, {
@@ -130,10 +135,17 @@ export default function UsersPage() {
     setEditOpen(false);
     await loadData();
 
-    Swal.fire({ icon: "success", title: "Updated", timer: 1000, showConfirmButton: false });
+    Swal.fire({
+      icon: "success",
+      title: "User updated",
+      timer: 1000,
+      showConfirmButton: false,
+    });
+
     setLoadingEdit(false);
   }
 
+  /* ================= DELETE ================= */
   async function handleDelete(id) {
     const ok = await Swal.fire({
       title: "Delete user?",
@@ -149,8 +161,8 @@ export default function UsersPage() {
     await loadData();
   }
 
-  const totalUsers = users.length;
-  const activeUsers = users.filter(u => u.is_active).length;
+  const input =
+    "w-full rounded-xl border border-black/10 px-3 py-2 text-xs focus:border-black/20 focus:ring-2 focus:ring-indigo-100";
 
   return (
     <section className="space-y-6">
@@ -160,25 +172,22 @@ export default function UsersPage() {
           <FiUsers className="text-indigo-600" />
           <div>
             <h1 className="text-lg font-semibold">Users</h1>
-            <p className="text-xs text-slate-500">Manage employees & access</p>
+            <p className="text-xs text-slate-500">
+              Manage employees & access
+            </p>
           </div>
         </div>
 
-        <div className="flex gap-3">
-          <Stat label="Total" value={totalUsers} dark />
-          <Stat label="Active" value={activeUsers} />
-
-          <button
-            onClick={() => setCreateOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-700"
-          >
-            <FiUserPlus /> Add User
-          </button>
-        </div>
+        <button
+          onClick={() => setCreateOpen(true)}
+          className="inline-flex items-center gap-2 rounded-xl bg-black/90 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-700"
+        >
+          <FiUserPlus /> Add User
+        </button>
       </header>
 
       {/* ================= TABLE ================= */}
-      <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
+      <div className="rounded-2xl border border-black/10 bg-white shadow-sm overflow-hidden">
         <table className="w-full text-xs">
           <thead className="bg-slate-50 text-slate-500">
             <tr>
@@ -191,26 +200,23 @@ export default function UsersPage() {
           </thead>
 
           <tbody>
-            {users.map(u => (
-              <tr key={u.id} className="border-t hover:bg-slate-50">
+            {users.map((u) => (
+              <tr key={u.id} className="border-t border-t-black/10 hover:bg-slate-50">
                 <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-semibold">
-                      {u.full_name?.[0]}
-                    </div>
-                    <div>
-                      <p className="font-medium">{u.full_name}</p>
-                      <p className="text-[11px] text-slate-500">{u.email}</p>
-                    </div>
-                  </div>
+                  <p className="font-medium">{u.full_name}</p>
+                  <p className="text-[11px] text-slate-500">
+                    {u.email}
+                  </p>
                 </td>
 
                 <td className="px-4 py-3">
-                  {u.dept ? (
-                    <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-medium">
-                      {u.dept}
+                  {u.department ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px]">
+                      <FiLayers size={10} /> {u.department.name}
                     </span>
-                  ) : "—"}
+                  ) : (
+                    "—"
+                  )}
                 </td>
 
                 <td className="px-4 py-3">
@@ -230,8 +236,18 @@ export default function UsersPage() {
                 </td>
 
                 <td className="px-4 py-3 text-right space-x-1">
-                  <IconBtn onClick={() => openEdit(u)}><FiEdit2 /></IconBtn>
-                  <IconBtn danger onClick={() => handleDelete(u.id)}><FiTrash2 /></IconBtn>
+                  <button
+                    onClick={() => openEdit(u)}
+                    className="h-8 w-8 rounded-full text-indigo-600 hover:bg-indigo-50"
+                  >
+                    <FiEdit2 />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(u.id)}
+                    className="h-8 w-8 rounded-full text-red-600 hover:bg-red-50"
+                  >
+                    <FiTrash2 />
+                  </button>
                 </td>
               </tr>
             ))}
@@ -239,116 +255,150 @@ export default function UsersPage() {
         </table>
       </div>
 
+      {/* ================= CREATE MODAL ================= */}
       {createOpen && (
         <Modal title="Add user" onClose={() => setCreateOpen(false)}>
-          <UserForm
-            form={createForm}
-            setForm={setCreateForm}
-            roles={roles}
-            submitLabel={loading ? "Creating..." : "Create user"}
-            onSubmit={handleCreate}
-          />
+          <form onSubmit={handleCreate} className="space-y-4">
+            <input className={input} placeholder="Username"
+              value={createForm.username}
+              onChange={e => setCreateForm({ ...createForm, username: e.target.value })}
+              required />
+
+            <input className={input} placeholder="Full name"
+              value={createForm.full_name}
+              onChange={e => setCreateForm({ ...createForm, full_name: e.target.value })}
+              required />
+
+            <input className={input} type="email" placeholder="Email"
+              value={createForm.email}
+              onChange={e => setCreateForm({ ...createForm, email: e.target.value })}
+              required />
+
+            <select className={input} value={createForm.department_id}
+              onChange={e => setCreateForm({ ...createForm, department_id: e.target.value })}>
+              <option value="">Select department</option>
+              {departments.map(d => (
+                <option key={d.id} value={d.id}>{d.name}</option>
+              ))}
+            </select>
+
+            {/* PASSWORD */}
+            <div className="relative">
+              <input
+                className={input}
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={createForm.password}
+                onChange={e => setCreateForm({ ...createForm, password: e.target.value })}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(p => !p)}
+                className="absolute right-3 top-2.5 text-slate-500"
+              >
+                {showPassword ? <FiEyeOff /> : <FiEye />}
+              </button>
+            </div>
+
+            <input
+              className={input}
+              type={showPassword ? "text" : "password"}
+              placeholder="Confirm password"
+              value={createForm.confirm_password}
+              onChange={e => setCreateForm({ ...createForm, confirm_password: e.target.value })}
+              required
+            />
+
+            <select className={input} value={createForm.role_id}
+              onChange={e => setCreateForm({ ...createForm, role_id: e.target.value })}
+              required>
+              <option value="">Select role</option>
+              {roles.map(r => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+
+            <button className="w-full rounded-xl bg-indigo-600 py-2 text-xs font-medium text-white hover:bg-indigo-700">
+              {loading ? "Creating..." : "Create user"}
+            </button>
+          </form>
         </Modal>
       )}
 
+      {/* ================= EDIT MODAL ================= */}
       {editOpen && (
         <Modal title="Edit user" onClose={() => setEditOpen(false)}>
-          <UserForm
-            isEdit
-            form={editForm}
-            setForm={setEditForm}
-            roles={roles}
-            submitLabel={loadingEdit ? "Saving..." : "Save changes"}
-            onSubmit={handleUpdate}
-          />
+          <form onSubmit={handleUpdate} className="space-y-4">
+            {/* same fields as create */}
+            <input className={input} placeholder="Username"
+              value={editForm.username}
+              onChange={e => setEditForm({ ...editForm, username: e.target.value })}
+              required />
+
+            <input className={input} placeholder="Full name"
+              value={editForm.full_name}
+              onChange={e => setEditForm({ ...editForm, full_name: e.target.value })}
+              required />
+
+            <input className={input} type="email" placeholder="Email"
+              value={editForm.email}
+              onChange={e => setEditForm({ ...editForm, email: e.target.value })}
+              required />
+
+            <select className={input} value={editForm.department_id}
+              onChange={e => setEditForm({ ...editForm, department_id: e.target.value })}>
+              <option value="">Select department</option>
+              {departments.map(d => (
+                <option key={d.id} value={d.id}>{d.name}</option>
+              ))}
+            </select>
+
+            <div className="relative">
+              <input
+                className={input}
+                type={showPassword ? "text" : "password"}
+                placeholder="New password (optional)"
+                value={editForm.password}
+                onChange={e => setEditForm({ ...editForm, password: e.target.value })}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(p => !p)}
+                className="absolute right-3 top-2.5 text-slate-500"
+              >
+                {showPassword ? <FiEyeOff /> : <FiEye />}
+              </button>
+            </div>
+
+            <input
+              className={input}
+              type={showPassword ? "text" : "password"}
+              placeholder="Confirm password"
+              value={editForm.confirm_password}
+              onChange={e => setEditForm({ ...editForm, confirm_password: e.target.value })}
+            />
+
+            <select className={input} value={editForm.role_id}
+              onChange={e => setEditForm({ ...editForm, role_id: e.target.value })}
+              required>
+              <option value="">Select role</option>
+              {roles.map(r => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+
+            <button className="w-full rounded-xl bg-indigo-600 py-2 text-xs font-medium text-white hover:bg-indigo-700">
+              {loadingEdit ? "Saving..." : "Save changes"}
+            </button>
+          </form>
         </Modal>
       )}
     </section>
   );
 }
 
-/* ================= COMPONENTS ================= */
-
-function Stat({ label, value, dark }) {
-  return (
-    <div className={`px-4 py-2 rounded-xl text-xs font-medium shadow ${
-      dark ? "bg-slate-900 text-white" : "bg-emerald-50 text-emerald-700 border"
-    }`}>
-      {label}: {value}
-    </div>
-  );
-}
-
-function IconBtn({ children, danger, ...props }) {
-  return (
-    <button
-      {...props}
-      className={`h-8 w-8 rounded-full inline-flex items-center justify-center
-        ${danger ? "text-red-600 hover:bg-red-50" : "text-indigo-600 hover:bg-indigo-50"}`}
-    >
-      {children}
-    </button>
-  );
-}
-
-function UserForm({ form, setForm, roles, onSubmit, submitLabel, isEdit }) {
-  const input =
-    "w-full rounded-xl border border-slate-300 px-3 py-2 text-xs focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100";
-
-  return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <input className={input} placeholder="Username" value={form.username}
-        onChange={e => setForm({ ...form, username: e.target.value })} required />
-
-      <input className={input} placeholder="Full name" value={form.full_name}
-        onChange={e => setForm({ ...form, full_name: e.target.value })} required />
-
-      <input className={input} type="email" placeholder="Email" value={form.email}
-        onChange={e => setForm({ ...form, email: e.target.value })} required />
-
-      <select className={input} value={form.dept}
-        onChange={e => setForm({ ...form, dept: e.target.value })}>
-        <option value="">Select department</option>
-        {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
-      </select>
-
-      <input className={input} type="password"
-        placeholder={isEdit ? "New password (optional)" : "Password"}
-        value={form.password}
-        onChange={e => setForm({ ...form, password: e.target.value })}
-        required={!isEdit}
-      />
-
-      <select className={input} value={form.role_id}
-        onChange={e => setForm({ ...form, role_id: e.target.value })} required>
-        <option value="">Select role</option>
-        {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-      </select>
-
-      {isEdit && (
-        <div className="flex items-center justify-between rounded-xl border px-3 py-2">
-          <span className="text-xs text-slate-600">Active user</span>
-          <button
-            type="button"
-            onClick={() => setForm(p => ({ ...p, is_active: !p.is_active }))}
-            className={`relative w-11 h-6 rounded-full ${
-              form.is_active ? "bg-emerald-500" : "bg-slate-300"
-            }`}
-          >
-            <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${
-              form.is_active ? "left-5" : "left-0.5"
-            }`} />
-          </button>
-        </div>
-      )}
-
-      <button className="w-full rounded-xl bg-indigo-600 py-2 text-xs font-medium text-white hover:bg-indigo-700">
-        {submitLabel}
-      </button>
-    </form>
-  );
-}
-
+/* ================= MODAL ================= */
 function Modal({ title, children, onClose }) {
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
